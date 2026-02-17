@@ -1,33 +1,3 @@
-local sampleData = {
-    {
-        id = 2854,
-        flag = {},
-        children = {
-            {
-                id = 2854,
-                flag = {},
-                children = {
-                    id = 2854,
-                    children = {
-
-                    }
-                }
-            },
-        }
-
-    },
-    {
-        id = 2854,
-        flag = {},
-        children = {
-            id = 2854,
-            children = {
-
-            }
-        }
-    },
-}
-
 
 
 local items, units, objects, quests, zones, refloot, itemreq, areatrigger, professions
@@ -137,6 +107,8 @@ PFEXQuestHelper.Browser.indent = 20     -- 缩进宽度
 PFEXQuestHelper.Browser.pinTitles = {}
 PFEXQuestHelper.nodes = {}
 PFEXQuestHelper.pins = {}
+ PFEXQuestHelper.expandToId={}
+
 function PFEXQuestHelper.Browser:InitFramePool()
     -- Frame 池
     self.framePool = {
@@ -281,6 +253,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
 
     -- 设置文本
     local flag = data.flag
+    
     local color, tag, text = nil, "", nil
 
     if flag.UNKNOWN then
@@ -292,6 +265,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
         color = "|cff5a5a5a"
         tag = pfExtend_Loc["QuestHelper_FLAG_Finished"]
     elseif flag.DOING then
+        PFEXQuestHelper.expandToId[data.id] = true
         color = "|cff3eff2b"
         tag = pfExtend_Loc["QuestHelper_FLAG_Active"]
     elseif flag.WRONGRACE then
@@ -325,6 +299,8 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     else
         text = "|cff9d9d9dUnknown|r"
     end
+
+
     button.text:SetText(text)
 
     if flag.HASPRE and node.level == 0 then
@@ -359,11 +335,11 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
         if IsControlKeyDown() and node.clickType == "FINDPRE" then
             local preId, preZone = PFEXQuestHelper.FindPreUndo(node.data.id)
 
-            PFEXQuestHelper.expandToId = data.id
+            PFEXQuestHelper.expandToId[data.id] = true 
             pfMap:SetMapByID(preZone)
         elseif node.clickType == "OTHERZONE" then
             if PfExtend_Database["QuestHelper"]["QuestZoneData"][data.id] then
-                PFEXQuestHelper.expandToId = data.id
+                PFEXQuestHelper.expandToId[data.id] = true 
                 pfMap:SetMapByID(PfExtend_Database["QuestHelper"]["QuestZoneData"][data.id][1])
             end
         else
@@ -384,7 +360,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
         if node.clickType == "FINDPRE" then
             GameTooltip:AddLine(pfExtend_Loc["Click to fix on the map"], 0.55, 0.55, 0.55);
             GameTooltip:AddLine(pfExtend_Loc["Hold <Ctrl> and Click to track Pre-quest on the other map"], 0.55, 0.55,
-            0.55);
+                0.55);
             GameTooltip:SetHeight(GameTooltip:GetHeight() + 42);
         elseif node.clickType == "OTHERZONE" then
             GameTooltip:AddLine(pfExtend_Loc["Click to track the quest on the other map"], 0.55, 0.55, 0.55);
@@ -437,14 +413,14 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     end
 
     -- 展开到指定 ID
-    if PFEXQuestHelper.expandToId and data.id == PFEXQuestHelper.expandToId then
+    if PFEXQuestHelper.expandToId[data.id] then
         local pnode = node
         for i = level, 0, -1 do
             pnode.expanded = true
             pnode = pnode.parent or pnode
         end
         button.texClickable:Show()
-        PFEXQuestHelper.expandToId = nil
+        PFEXQuestHelper.expandToId[data.id] = false
         PFEXQuestHelper.expandToRootId = pnode.data.id
     end
 

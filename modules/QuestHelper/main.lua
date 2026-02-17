@@ -417,8 +417,8 @@ function PFEXQuestHelper.QuestChainBuilder(questList)
 
     -- 优先级位定义（从前到后，前面的优先级高，对应低位）
     local PRIORITY = {
-        HAS_PRE     = 1,   -- 00000001  有前置（倒数第八）
-        FINISHED    = 2,   -- 00000010  已完成（倒数第七）
+        HAS_PRE     = 2,   -- 00000001  有前置（倒数第八）
+        FINISHED    = 0,   -- 00000010  已完成（倒数第七）
         AFTER_FIN   = 4,   -- 00000100  后续全完成（倒数第六）
         EVENT       = 8,   -- 00001000  事件任务（倒数第五）
         WRONG_SKILL = 16,  -- 00010000  专业不对（倒数第四）

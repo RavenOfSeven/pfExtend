@@ -431,7 +431,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
         end
         button.texClickable:Show()
         PFEXQuestHelper.expandToId[data.id] = false
-        PFEXQuestHelper.expandToRootId = pnode.data.id
+        if not PFEXQuestHelper.expandToRootId then PFEXQuestHelper.expandToRootId = pnode.data.id end
     end
 
 

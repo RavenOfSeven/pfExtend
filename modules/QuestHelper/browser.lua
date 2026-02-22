@@ -155,7 +155,13 @@ function PFEXQuestHelper.Browser:CreatePooledButton(index)
     button.text:SetPoint("LEFT", toggle, "RIGHT", 5, 0)
 
     -- 图标（可选，需要时动态创建）
-    button.icon = nil
+    button.pin = button:CreateTexture(nil,"ARTWORK")
+    button.pin:SetWidth(8)
+    button.pin:SetHeight(8)
+    button.pin:ClearAllPoints()
+    button.pin:SetPoint("TOPLEFT",toggle,"TOPRIGHT",1,0)
+    button.pin:SetTexture(pfExtend_Path.."\\compat\\track")
+    button.pin:Hide()
 
     -- 存入池中
     button:Hide()
@@ -177,6 +183,7 @@ function PFEXQuestHelper.Browser:AcquireFrame()
             pooled.used = true
             pooled.button:Show()
             pooled.toggle:Show()
+            pooled.button.pin:Hide()
             return pooled
         end
     end
@@ -187,6 +194,7 @@ function PFEXQuestHelper.Browser:AcquireFrame()
     pooled.used = true
     pooled.button:Show()
     pooled.toggle:Show()
+    pooled.button.pin:Hide()
     return pooled
 end
 
@@ -335,7 +343,6 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     button:SetScript("OnClick", function()
         if IsControlKeyDown() and node.clickType == "FINDPRE" then
             local preId, preZone = PFEXQuestHelper.FindPreUndo(node.data.id)
-
             PFEXQuestHelper.expandToId[data.id] = true 
             pfMap:SetMapByID(preZone)
         elseif node.clickType == "OTHERZONE" then
@@ -346,9 +353,11 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
         else
             node.mapNode = not node.mapNode
             if node.mapNode then
+                button.pin:Show()
                 node.mapNodeTitle = PFEXQuestHelper.AddMapNode(data.id, true)
                 PFEXQuestHelper.Browser.pinTitles[node.mapNodeTitle] = true
             else
+                button.pin:Hide()
                 pfMap:DeleteNode("PFEX", node.mapNodeTitle)
                 PFEXQuestHelper.Browser.pinTitles[node.mapNodeTitle] = false
             end
@@ -429,6 +438,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     node.mapNodeTitle = PFEXQuestHelper.AddMapNode(data.id, false)
     if self.pinTitles[node.mapNodeTitle] then
         node.mapNode = true
+        button.pin:Show()
     end
     -- local needAdd = true
     -- for i, pin in pairs(PFEXQuestHelper.pins) do
@@ -436,7 +446,7 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     --         needAdd = false
     --     end
     -- end
-
+                
     self:UpdateNodeVisual(node)
     return node
 end

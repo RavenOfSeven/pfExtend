@@ -8,6 +8,7 @@
 ## Dependencies: pfQuest
 ## OptionalDeps: pfUI
 ## SavedVariables: PfExtend_Database, PfExtend_Config
+dbOverwrite.lua
 init\compat.xml
 init\locales.xml
 init\modules.xml

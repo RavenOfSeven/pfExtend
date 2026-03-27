@@ -40,6 +40,14 @@ PFEXQuestHelper.Browser.title:SetJustifyH("LEFT")
 PFEXQuestHelper.Browser.title:SetFont(pfUI.font_default, 14)
 PFEXQuestHelper.Browser.title:SetText("|cff33ffccpf|rExtend-" .. pfExtend_Loc["windowTitle_QuestHelper"])
 
+-- 任务统计文本
+PFEXQuestHelper.Browser.questStats = PFEXQuestHelper.Browser:CreateFontString("QuestStats", "LOW", "GameFontNormal")
+PFEXQuestHelper.Browser.questStats:SetFontObject(GameFontWhite)
+PFEXQuestHelper.Browser.questStats:SetPoint("TOP", PFEXQuestHelper.Browser, "TOP", 0, -28)
+PFEXQuestHelper.Browser.questStats:SetJustifyH("CENTER")
+PFEXQuestHelper.Browser.questStats:SetFont(pfUI.font_default, 12)
+PFEXQuestHelper.Browser.questStats:SetText("")
+
 PFEXQuestHelper.Browser.close = CreateFrame("Button", "QuestHelperBrowserClose", PFEXQuestHelper.Browser)
 PFEXQuestHelper.Browser.close:SetPoint("TOPRIGHT", -5, -5)
 PFEXQuestHelper.Browser.close:SetHeight(20)
@@ -451,6 +459,33 @@ function PFEXQuestHelper.Browser:CreateNode(data, parentNode, level, pooledFrame
     return node
 end
 
+-- 计算当前地图任务统计
+function PFEXQuestHelper.Browser:UpdateQuestStats(dataList)
+    local total = 0
+    local finished = 0
+    
+    local function CountNodes(nodes)
+        for _, node in ipairs(nodes) do
+            total = total + 1
+            if node.flag and node.flag.FINISHED then
+                finished = finished + 1
+            end
+            if node.children then
+                CountNodes(node.children)
+            end
+        end
+    end
+    
+    CountNodes(dataList)
+    
+    if total > 0 then
+        local color = finished == total and "|cff00ff00" or "|cffffff00"
+        self.questStats:SetText(color .. finished .. "|r/" .. total .. " " .. pfExtend_Loc["Quests"])
+    else
+        self.questStats:SetText("")
+    end
+end
+
 function PFEXQuestHelper.Browser:BuildTree(dataList)
     -- 初始化 Frame 池（如果还没有）
     if not self.framePool then
@@ -465,6 +500,9 @@ function PFEXQuestHelper.Browser:BuildTree(dataList)
 
     --清除pins
     PFEXQuestHelper.nodes = {}
+    
+    -- 更新任务统计
+    self:UpdateQuestStats(dataList)
 
 
 

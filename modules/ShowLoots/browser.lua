@@ -1,5 +1,7 @@
 local compat = pfExtendCompat;
 local tooltip_limit = 5;
+local currentSortBy = "chance"; -- 当前排序方式: chance, id, name
+local currentSortOrder = "desc"; -- 当前排序顺序: asc(升序), desc(降序)
 
 
 -- add database shortcuts
@@ -487,12 +489,175 @@ pfUI.api.CreateBackdrop(PFEXShowLoots.Browser.scroll.backdrop, nil, true)
 PFEXShowLoots.Browser.scroll.list = pfUI.api.CreateScrollChild("showLootsBrowserScrollScroll", PFEXShowLoots.Browser.scroll)
 PFEXShowLoots.Browser.scroll.list:SetWidth(PFEXShowLoots.Browser:GetWidth()-40)
 
+-- 更新排序按钮的文本和状态
+local function UpdateSortButtonText(btn)
+    local baseText = pfExtend_Loc["Sort_" .. btn.sortByKey]
+    if btn.sortBy == currentSortBy then
+        -- 当前选中的按钮显示排序方向箭头
+        local arrow = currentSortOrder == "asc" and "↑" or "↓"
+        btn.text:SetText(baseText .. " " .. arrow)
+    else
+        btn.text:SetText(baseText)
+    end
+end
+
+-- 创建排序按钮
+local function CreateSortButton(name, textKey, sortBy, xOffset)
+    local btn = CreateFrame("Button", nil, PFEXShowLoots.Browser)
+    btn:SetPoint("TOPLEFT", PFEXShowLoots.Browser, "TOPLEFT", 15 + xOffset, -55)
+    btn:SetHeight(20)
+    btn:SetWidth(65)
+    
+    btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    btn.text:SetFont(pfUI.font_default, 12, "OUTLINE")
+    btn.text:SetPoint("CENTER", btn, "CENTER", 0, 0)
+    
+    btn.sortBy = sortBy
+    btn.sortByKey = textKey
+    
+    -- 高亮背景
+    btn.tex = btn:CreateTexture("BACKGROUND")
+    btn.tex:SetAllPoints(btn)
+    btn.tex:SetTexture(1, 1, 1, 0.1)
+    
+    pfUI.api.SkinButton(btn)
+    
+    btn:SetScript("OnClick", function()
+        if currentSortBy == sortBy then
+            -- 如果点击的是当前排序方式，则切换排序顺序
+            currentSortOrder = (currentSortOrder == "desc") and "asc" or "desc"
+        else
+            -- 切换到新的排序方式，默认掉率降序，ID升序，品质降序
+            currentSortBy = sortBy
+            if sortBy == "chance" or sortBy == "quality" then
+                currentSortOrder = "desc"
+            else
+                currentSortOrder = "asc"
+            end
+        end
+        
+        -- 刷新所有按钮的显示状态和文本
+        for _, button in ipairs({"sortByChance", "sortById", "sortByQuality"}) do
+            local b = PFEXShowLoots.Browser[button]
+            if b then
+                b.tex:SetTexture(1, 1, 1, b.sortBy == currentSortBy and 0.3 or 0.1)
+                UpdateSortButtonText(b)
+            end
+        end
+        
+        -- 重新显示当前掉落列表
+        PFEXShowLoots.Browser:Hide()
+        PFEXShowLoots.Browser:Show()
+    end)
+    
+    return btn
+end
+
+-- 创建三个排序按钮
+PFEXShowLoots.Browser.sortByChance = CreateSortButton("sortByChance", "Chance", "chance", 0)
+PFEXShowLoots.Browser.sortById = CreateSortButton("sortById", "ID", "id", 70)
+PFEXShowLoots.Browser.sortByQuality = CreateSortButton("sortByQuality", "Quality", "quality", 140)
+
+-- 排序函数
+local function SortLootList(lootList)
+    -- 首先分离star物品和非star物品
+    local starred = {}
+    local normal = {}
+    
+    for _, l in ipairs(lootList) do
+        local id = l[1]
+        if pfBrowser_fav and pfBrowser_fav["items"] and pfBrowser_fav["items"][id] then
+            table.insert(starred, l)
+        else
+            table.insert(normal, l)
+        end
+    end
+    
+    -- 根据当前排序方式排序普通物品
+    local sortFunc
+    if currentSortBy == "chance" then
+        if currentSortOrder == "desc" then
+            -- 按掉率降序
+            sortFunc = function(a, b)
+                return a[2] > b[2]
+            end
+        else
+            -- 按掉率升序
+            sortFunc = function(a, b)
+                return a[2] < b[2]
+            end
+        end
+    elseif currentSortBy == "id" then
+        if currentSortOrder == "asc" then
+            -- 按ID升序
+            sortFunc = function(a, b)
+                return a[1] < b[1]
+            end
+        else
+            -- 按ID降序
+            sortFunc = function(a, b)
+                return a[1] > b[1]
+            end
+        end
+    elseif currentSortBy == "quality" then
+        -- 按品质排序
+        sortFunc = function(a, b)
+            local _, _, qualityA = GetItemInfo(a[1])
+            local _, _, qualityB = GetItemInfo(b[1])
+            -- 如果缓存中没有，尝试从数据库获取
+            if qualityA == nil then
+                qualityA = PfExtend_Database["ShowLoots"]["itemQualityData"][a[1]]
+            end
+            if qualityB == nil then
+                qualityB = PfExtend_Database["ShowLoots"]["itemQualityData"][b[1]]
+            end
+            -- 如果都没有，默认为0（灰色）
+            qualityA = qualityA or 0
+            qualityB = qualityB or 0
+            
+            if currentSortOrder == "desc" then
+                return qualityA > qualityB
+            else
+                return qualityA < qualityB
+            end
+        end
+    end
+    
+    -- 排序star物品（使用相同的排序方式）
+    table.sort(starred, sortFunc)
+    table.sort(normal, sortFunc)
+    
+    -- 合并结果：star物品在前，普通物品在后
+    local result = {}
+    for _, l in ipairs(starred) do
+        table.insert(result, l)
+    end
+    for _, l in ipairs(normal) do
+        table.insert(result, l)
+    end
+    
+    return result
+end
+
 PFEXShowLoots.Browser:SetScript("OnShow", function()
     PFEXShowLoots.isBrowse = true;
     openTime = GetTime();
     PFEXShowLoots.Browser.MobName:SetText(PFEXShowLoots.focus_name)
+    
+    -- 更新排序按钮高亮状态和文本
+    for _, button in ipairs({"sortByChance", "sortById", "sortByQuality"}) do
+        local b = PFEXShowLoots.Browser[button]
+        if b then
+            b.tex:SetTexture(1, 1, 1, b.sortBy == currentSortBy and 0.3 or 0.1)
+            UpdateSortButtonText(b)
+        end
+    end
+    
+    -- 排序掉落列表
+    local sortedLootList = SortLootList(PFEXShowLoots.LootListShown)
+    
     local i = 0
-    for _, l in pairs(PFEXShowLoots.LootListShown) do
+    for _, l in ipairs(sortedLootList) do
         local id, chance, r, g, b = unpack(l)
         i = i + 1
         PFEXShowLoots.Browser.scroll.buttons[i] = PFEXShowLoots.Browser.scroll.buttons[i] or ResultButtonCreate(i)

@@ -64,5 +64,11 @@ pfExtend_Locales["zhCN"] = {
     ["Btn_updateSuccess"] = "更新成功",
     ["Btn_updateFailed"] = "更新失败",
     ["Update_Error_Hint"] = "错误：未找到pfQuest数据库，请检查是否安装pfQuest和PfUI！",
-    ["Update_Success_Hint"] = "成功从pfQuest更新数据库！"
+    ["Update_Success_Hint"] = "成功从pfQuest更新数据库！",
+
+    ["Sort_Chance"] = "掉率",
+    ["Sort_ID"] = "ID",
+    ["Sort_Quality"] = "品质",
+
+    ["Quests"] = "任务"
 }

@@ -65,5 +65,11 @@ pfExtend_Locales["enUS"] = {
     ["Btn_updateSuccess"] = "Success",
     ["Btn_updateFailed"] = "Failed",
     ["Update_Error_Hint"] = "Error: pfQuest database not found. Please verify that pfQuest and PfUI are installed.",
-    ["Update_Success_Hint"] = "pfExtend database updated successfully!"
+    ["Update_Success_Hint"] = "pfExtend database updated successfully!",
+
+    ["Sort_Chance"] = "Chance",
+    ["Sort_ID"] = "ID",
+    ["Sort_Quality"] = "Quality",
+
+    ["Quests"] = "Quests"
 }
